@@ -12,12 +12,22 @@ class Tarea(BaseModel):
     prioridad: int
 
 
+class TareaResponse(BaseModel):
+    id: int
+    descripcion: str
+    estado: str
+
+
 class Usuario(BaseModel):
     nombre: str
     edad: int
 
 
-@app.get("/tareas")
+class UsuarioResponse(BaseModel):
+    nombre: str
+
+
+@app.get("/tareas", response_model=list[TareaResponse])
 def obtener_tareas():
     return tareas
 
@@ -43,7 +53,7 @@ def crear_tarea(tarea: Tarea):
     return nueva
 
 
-@app.get("/tareas/{id}")
+@app.get("/tareas/{id}", response_model=TareaResponse)
 def encontrar_tarea(id: int):
     for tarea in tareas:
         if tarea["id"] == id:
@@ -55,12 +65,12 @@ def encontrar_tarea(id: int):
     )
 
 
-@app.post("/usuarios")
+@app.post("/usuarios", response_model=UsuarioResponse)
 def crear_usuario(usuario: Usuario):
 
     return {
-        "mensaje": "Usuario creado",
-        "usuario": usuario
+
+        "nombre": usuario.nombre
     }
 
 
@@ -87,7 +97,7 @@ def actualizar_tarea(id: int, tarea: Tarea):
 def eliminar_tarea(id: int):
     if 1 <= id <= len(tareas):
         tareas.pop(id-1)
-        return {"mensaje": "Tarea eliminada"}
+        return None
 
     raise HTTPException(
         status_code=404,
