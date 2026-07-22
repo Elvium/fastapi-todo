@@ -2,6 +2,8 @@ from fastapi import FastAPI, Depends
 from routers.tareas import router as tareas_router
 from routers.usuarios import router as usuarios_router
 from routers.depends import obtener_mensaje, obtener_fecha, obtener_autor, verificar_usuario
+import models.tarea
+
 
 app = FastAPI()
 
