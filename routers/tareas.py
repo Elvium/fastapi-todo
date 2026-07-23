@@ -1,5 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+from database.database import get_db
+
+
 router = APIRouter(
     prefix="/tareas",
     tags=["Tareas"]
@@ -38,12 +42,12 @@ class TareaResponse(BaseModel):
 # ===========================
 
 @router.get("/", response_model=list[TareaResponse])
-def obtener_tareas():
+def obtener_tareas(db: Session = Depends(get_db)):
     return tareas
 
 
 @router.get("/{id}", response_model=TareaResponse)
-def obtener_tarea(id: int):
+def obtener_tarea(id: int, db: Session = Depends(get_db)):
 
     for tarea in tareas:
         if tarea["id"] == id:
@@ -60,22 +64,26 @@ def obtener_tarea(id: int):
     response_model=TareaResponse,
     status_code=201
 )
-def crear_tarea(tarea: Tarea):
+def crear_tarea(
+    tarea: Tarea,
+    db: Session = Depends(get_db)
+):
 
-    nueva = {
-        "id": len(tareas) + 1,
-        "descripcion": tarea.descripcion,
-        "prioridad": tarea.prioridad,
-        "estado": "Pendiente"
-    }
+    nueva = Tarea(
+        descripcion=tarea.descripcion,
+        prioridad=tarea.prioridad,
+        estado="Pendiente"
+    )
 
-    tareas.append(nueva)
+    db.add(nueva)
+    db.commit()
+    db.refresh(nueva)
 
     return nueva
 
 
 @router.put("/{id}", response_model=TareaResponse)
-def actualizar_tarea(id: int, tarea: Tarea):
+def actualizar_tarea(id: int, tarea: Tarea, db: Session = Depends(get_db)):
 
     for item in tareas:
 
@@ -93,7 +101,7 @@ def actualizar_tarea(id: int, tarea: Tarea):
 
 
 @router.delete("/{id}", status_code=204)
-def eliminar_tarea(id: int):
+def eliminar_tarea(id: int, db: Session = Depends(get_db)):
 
     for indice, tarea in enumerate(tareas):
 
@@ -114,7 +122,7 @@ def eliminar_tarea(id: int):
 # ===========================
 
 @router.get("/buscar/")
-def buscar_tareas(texto: str):
+def buscar_tareas(texto: str, db: Session = Depends(get_db)):
 
     return [
         tarea
