@@ -1,20 +1,28 @@
 from database.database import SessionLocal
 from models.tarea import Tarea
+from sqlalchemy import select
 
 db = SessionLocal()
 
-nueva = Tarea(
-    descripcion="Aprender PostgreSQL",
-    prioridad=5,
-    estado="Pendiente"
-)
+stmt = select(Tarea)
 
+resultado = db.execute(stmt)
 
-db.add(nueva)
-db.commit()
-db.refresh(nueva)
+tareas = resultado.scalars().all()
 
+for tarea in tareas:
+    print(tarea.descripcion)
 
-print(nueva.id)
+stmt2 = select(Tarea).filter(Tarea.id == 1)
+
+resultado2 = db.execute(stmt2)
+
+tarea = resultado2.scalars().first()
+
+if tareas is not None:
+    print(tarea)
+    print(tarea.descripcion)
+else:
+    print("No hay tarea con dicho ID")
 
 db.close()
