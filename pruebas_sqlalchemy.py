@@ -19,7 +19,7 @@ resultado2 = db.execute(stmt2)
 
 tarea = resultado2.scalars().first()
 
-if tareas is not None:
+if tarea is not None:
     print(tarea)
     print(tarea.descripcion)
 else:

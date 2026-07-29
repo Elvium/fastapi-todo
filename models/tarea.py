@@ -1,8 +1,5 @@
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import Integer, String
 from database.database import engine
 
 
@@ -20,15 +17,18 @@ class Tarea(Base):
     )
 
     descripcion: Mapped[str] = mapped_column(
-        String(100)
+        String(100),
+        nullable=False
     )
 
     prioridad: Mapped[int] = mapped_column(
-        Integer
+        Integer,
+        nullable=False
     )
 
     estado: Mapped[str] = mapped_column(
-        String(30)
+        String(30),
+        nullable=False
     )
 
 

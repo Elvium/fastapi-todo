@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from sqlalchemy import select
+
 from database.database import get_db
+from models.tarea import Tarea as TareaModel
 
 
 router = APIRouter(
@@ -9,14 +12,13 @@ router = APIRouter(
     tags=["Tareas"]
 )
 
-tareas = []
-
 
 # ===========================
-# MODELOS
+# SCHEMAS PYDANTIC
 # ===========================
 
 class Tarea(BaseModel):
+
     descripcion: str = Field(
         min_length=5,
         max_length=100,
@@ -31,33 +33,63 @@ class Tarea(BaseModel):
 
 
 class TareaResponse(BaseModel):
+
     id: int
     descripcion: str
     prioridad: int
     estado: str
+
+    class Config:
+        from_attributes = True
 
 
 # ===========================
 # ENDPOINTS
 # ===========================
 
+
+# GET TODAS LAS TAREAS
 @router.get("/", response_model=list[TareaResponse])
-def obtener_tareas(db: Session = Depends(get_db)):
+def obtener_tareas(
+    db: Session = Depends(get_db)
+):
+
+    stmt = select(TareaModel)
+
+    result = db.execute(stmt)
+
+    tareas = result.scalars().all()
+
     return tareas
 
 
+# GET POR ID
+# Todavía pendiente migrarlo completamente
 @router.get("/{id}", response_model=TareaResponse)
-def obtener_tarea(id: int, db: Session = Depends(get_db)):
+def obtener_tarea(
+    id: int,
+    db: Session = Depends(get_db)
+):
 
-    for tarea in tareas:
-        if tarea["id"] == id:
-            return tarea
-
-    raise HTTPException(
-        status_code=404,
-        detail="Tarea no encontrada"
+    stmt = select(TareaModel).filter(
+        TareaModel.id == id
     )
 
+    result = db.execute(stmt)
+
+    tarea = result.scalars().first()
+
+    if tarea is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Tarea no encontrada"
+        )
+
+    return tarea
+
+
+# CREAR TAREA
 
 @router.post(
     "/",
@@ -69,73 +101,20 @@ def crear_tarea(
     db: Session = Depends(get_db)
 ):
 
-    nueva = Tarea(
+    nueva = TareaModel(
+
         descripcion=tarea.descripcion,
+
         prioridad=tarea.prioridad,
+
         estado="Pendiente"
+
     )
 
     db.add(nueva)
+
     db.commit()
+
     db.refresh(nueva)
 
     return nueva
-
-
-@router.put("/{id}", response_model=TareaResponse)
-def actualizar_tarea(id: int, tarea: Tarea, db: Session = Depends(get_db)):
-
-    for item in tareas:
-
-        if item["id"] == id:
-
-            item["descripcion"] = tarea.descripcion
-            item["prioridad"] = tarea.prioridad
-
-            return item
-
-    raise HTTPException(
-        status_code=404,
-        detail="Tarea no encontrada"
-    )
-
-
-@router.delete("/{id}", status_code=204)
-def eliminar_tarea(id: int, db: Session = Depends(get_db)):
-
-    for indice, tarea in enumerate(tareas):
-
-        if tarea["id"] == id:
-
-            tareas.pop(indice)
-
-            return None
-
-    raise HTTPException(
-        status_code=404,
-        detail="Tarea no encontrada"
-    )
-
-
-# ===========================
-# FILTROS
-# ===========================
-
-@router.get("/buscar/")
-def buscar_tareas(texto: str, db: Session = Depends(get_db)):
-
-    return [
-        tarea
-        for tarea in tareas
-        if texto.lower() in tarea["descripcion"].lower()
-    ]
-
-
-@router.get("/estado/")
-def filtrar_estado(estado: str):
-
-    return [
-        tarea
-        for tarea in tareas
-        if tarea["estado"].lower() == estado.lower()
-    ]
