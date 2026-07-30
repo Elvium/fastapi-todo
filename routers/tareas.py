@@ -64,7 +64,6 @@ def obtener_tareas(
 
 
 # GET POR ID
-# Todavía pendiente migrarlo completamente
 @router.get("/{id}", response_model=TareaResponse)
 def obtener_tarea(
     id: int,
