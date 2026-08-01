@@ -117,3 +117,35 @@ def crear_tarea(
     db.refresh(nueva)
 
     return nueva
+
+
+@router.put("/{id}", response_model=TareaResponse)
+def actualizar_tarea(
+    id: int,
+    tarea: Tarea,
+    db: Session = Depends(get_db)
+):
+
+    stmt = select(TareaModel).filter(
+        TareaModel.id == id
+    )
+
+    result = db.execute(stmt)
+
+    tarea_db = result.scalars().first()
+
+    if tarea_db is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Tarea no encontrada"
+        )
+
+    tarea_db.descripcion = tarea.descripcion
+    tarea_db.prioridad = tarea.prioridad
+
+    db.commit()
+
+    db.refresh(tarea_db)
+
+    return tarea_db
