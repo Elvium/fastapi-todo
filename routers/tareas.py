@@ -149,3 +149,29 @@ def actualizar_tarea(
     db.refresh(tarea_db)
 
     return tarea_db
+
+
+@router.delete("/{id}", status_code=204)
+def eliminar_tarea(
+    id: int,
+    db: Session = Depends(get_db)
+):
+
+    stmt = select(TareaModel).filter(
+        TareaModel.id == id
+    )
+
+    result = db.execute(stmt)
+
+    tarea = result.scalars().first()
+
+    if tarea is None:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Tarea no encontrada"
+        )
+
+    db.delete(tarea)
+
+    db.commit()
