@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from services.tareas import obtener_tarea_service
 
 from database.database import get_db
 from models.tarea import Tarea as TareaModel
@@ -69,14 +70,7 @@ def obtener_tarea(
     id: int,
     db: Session = Depends(get_db)
 ):
-
-    stmt = select(TareaModel).filter(
-        TareaModel.id == id
-    )
-
-    result = db.execute(stmt)
-
-    tarea = result.scalars().first()
+    tarea = obtener_tarea_service(db, id)
 
     if tarea is None:
 
