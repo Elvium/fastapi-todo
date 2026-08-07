@@ -1,11 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from sqlalchemy import select
-from services.tareas import obtener_tarea_service
-
+from service.tareas import obtener_tarea_service, obtener_tareas_service, crear_tarea_service, eliminar_tarea_service, actualizar_tarea_service
 from database.database import get_db
-from models.tarea import Tarea as TareaModel
 
 
 router = APIRouter(
@@ -55,13 +52,7 @@ def obtener_tareas(
     db: Session = Depends(get_db)
 ):
 
-    stmt = select(TareaModel)
-
-    result = db.execute(stmt)
-
-    tareas = result.scalars().all()
-
-    return tareas
+    return obtener_tareas_service(db)
 
 
 # GET POR ID
@@ -94,23 +85,7 @@ def crear_tarea(
     db: Session = Depends(get_db)
 ):
 
-    nueva = TareaModel(
-
-        descripcion=tarea.descripcion,
-
-        prioridad=tarea.prioridad,
-
-        estado="Pendiente"
-
-    )
-
-    db.add(nueva)
-
-    db.commit()
-
-    db.refresh(nueva)
-
-    return nueva
+    return crear_tarea_service(tarea, db)
 
 
 @router.put("/{id}", response_model=TareaResponse)
@@ -120,29 +95,16 @@ def actualizar_tarea(
     db: Session = Depends(get_db)
 ):
 
-    stmt = select(TareaModel).filter(
-        TareaModel.id == id
-    )
+    tarea_update = actualizar_tarea_service(id, tarea, db)
 
-    result = db.execute(stmt)
-
-    tarea_db = result.scalars().first()
-
-    if tarea_db is None:
+    if tarea_update is None:
 
         raise HTTPException(
             status_code=404,
             detail="Tarea no encontrada"
         )
 
-    tarea_db.descripcion = tarea.descripcion
-    tarea_db.prioridad = tarea.prioridad
-
-    db.commit()
-
-    db.refresh(tarea_db)
-
-    return tarea_db
+    return tarea_update
 
 
 @router.delete("/{id}", status_code=204)
@@ -150,22 +112,12 @@ def eliminar_tarea(
     id: int,
     db: Session = Depends(get_db)
 ):
+    tarea_del = eliminar_tarea_service(id, db)
 
-    stmt = select(TareaModel).filter(
-        TareaModel.id == id
-    )
-
-    result = db.execute(stmt)
-
-    tarea = result.scalars().first()
-
-    if tarea is None:
+    if tarea_del is None:
 
         raise HTTPException(
             status_code=404,
             detail="Tarea no encontrada"
         )
-
-    db.delete(tarea)
-
-    db.commit()
+    return None
